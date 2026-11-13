@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>鸣潮文字转换器</title>
+<style>
+@@FONT_FACE@@
+
+:root{
+  --paper:#f2f0ea; --surface:#fff; --surface-2:#faf9f5; --surface-3:#eceae3;
+  --line:#dcd8ce; --line-2:#b8b3a6;
+  --ink:#1a1a18; --ink-2:#4a4842; --ink-3:#77746c; --ink-4:#9c988e;
+  --accent:#8c2f1f; --ok:#3f6b3a; --warn:#8a5a12; --danger:#8c2f1f; --info:#2f4f6b;
+  --nav-h:52px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent);}
+*{scrollbar-width:thin;scrollbar-color:var(--line-2) var(--surface-3);}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:var(--surface-3);}
+::-webkit-scrollbar-thumb{background:var(--line-2);border:2px solid var(--surface-3);}
+::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+::-webkit-scrollbar-corner{background:var(--surface-3);}
+
+/* ===== 顶栏 ===== */
+.nav{
+  position:sticky;top:0;z-index:50;height:var(--nav-h);
+  display:flex;align-items:center;gap:12px;padding:0 20px;
+  background:var(--surface);border-bottom:1px solid var(--line-2);
+}
+.mark{
+  width:30px;height:30px;flex:none;display:flex;align-items:center;justify-content:center;
+  background:var(--ink);color:#fff;font-size:22px;line-height:1;padding-bottom:2px;
+}
+.nav-title{font-size:15px;font-weight:700;letter-spacing:2px;white-space:nowrap;}
+.nav-tag{font-size:11px;color:var(--ink-3);letter-spacing:1px;white-space:nowrap;text-decoration:none;border-bottom:1px solid var(--line);}
+.nav-tag:hover{color:var(--accent);border-color:var(--accent);}
+.nav-link{
+  margin-left:auto;font-size:13px;font-weight:700;letter-spacing:1px;
+  color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent);padding-bottom:1px;
+}
+.nav-link:hover{color:var(--ink);border-color:var(--ink);}
+
+.app{max-width:1280px;margin:0 auto;padding:22px 20px 48px;}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:18px;align-items:start;}
+.side{position:sticky;top:calc(var(--nav-h) + 18px);}
+@media (max-width:1120px){.layout{grid-template-columns:minmax(0,1fr);} .side{position:static;}}
+
+.sec{background:var(--surface);border:1px solid var(--line-2);padding:14px 16px;margin-bottom:18px;}
+.sec-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line);}
+.sec-t{font-size:14px;font-weight:700;letter-spacing:2px;color:var(--ink);}
+.note{font-size:11.5px;color:var(--ink-3);letter-spacing:.3px;}
+.sec-h .note,.fld-h .note,.tape-h .note,.kb-h .note{margin-left:auto;}
+.lbl{font-size:11.5px;font-weight:700;letter-spacing:2px;color:var(--ink-2);flex:none;}
+
+/* ===== 字体选择 ===== */
+.chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:12px;}
+.chip{
+  --hue:var(--ink);
+  display:inline-flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--line-2);color:var(--ink-2);
+  font-size:12.5px;font-family:inherit;
+}
+.chip i{width:8px;height:8px;flex:none;background:var(--hue);}
+.chip:hover{border-color:var(--hue);color:var(--ink);}
+.chip.on{border-color:var(--hue);background:color-mix(in srgb,var(--hue) 9%,#fff);color:var(--ink);font-weight:700;box-shadow:inset 0 0 0 1px var(--hue);}
+
+/* ===== 软键盘 ===== */
+.kb{border:1px solid var(--line-2);background:var(--surface-2);padding:9px 10px 10px;margin-top:14px;}
+.kb-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px;}
+.badge{font-size:11.5px;font-weight:700;letter-spacing:1px;color:#fff;background:var(--ink);padding:2px 9px;}
+.kb-rows{display:flex;flex-direction:column;gap:5px;}
+.kb-row{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;}
+.kbtn{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  min-width:44px;height:44px;padding:0 8px;cursor:pointer;user-select:none;
+  background:var(--surface);border:1px solid var(--line-2);color:var(--ink);
+}
+.kbtn:hover{border-color:var(--accent);}
+.kbtn .kg{font-size:24px;line-height:1;pointer-events:none;}
+.kbtn .kg.big-h{font-size:35px;}
+.kbtn .kr{position:absolute;right:3px;bottom:2px;font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;font-size:10px;font-weight:700;line-height:1;letter-spacing:0;color:var(--ink-3);pointer-events:none;}
+.kbtn.func{height:34px;min-width:76px;flex:1 1 76px;max-width:148px;font-size:12.5px;font-family:inherit;color:var(--ink-2);}
+.kbtn.disabled{background:var(--surface-3);border-color:var(--line);cursor:not-allowed;}
+.kbtn.disabled .kg{font-family:"Segoe UI",system-ui,sans-serif;font-size:20px;color:var(--ink-4);}
+.kbtn.disabled:hover{border-color:var(--line);}
+.kbtn.func.undo{border-color:var(--accent);color:var(--accent);font-weight:700;}
+.kbtn.hit{animation:hit .22s ease-out;}
+.kbtn.denied{animation:deny .3s ease-out;}
+@keyframes hit{0%{background:var(--ink);border-color:var(--ink);color:#fff;}100%{background:var(--surface);border-color:var(--line-2);color:var(--ink);}}
+@keyframes deny{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+
+/* ===== 输入 ===== */
+.fld-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:14px 0 6px;}
+.ta{
+  width:100%;display:block;resize:vertical;min-height:70px;
+  background:var(--surface-2);border:1px solid var(--line-2);
+  padding:10px 12px;font-size:18px;line-height:1.6;color:var(--ink);font-family:inherit;outline:none;
+}
+.ta::placeholder{color:var(--ink-4);font-size:14px;}
+.ta:focus{border-color:var(--ink);background:var(--surface);}
+.foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.count{margin-left:auto;font-size:12px;color:var(--ink-3);}
+.count b{color:var(--ink);font-weight:700;}
+
+/* ===== 控件 ===== */
+.btn{
+  padding:6px 13px;cursor:pointer;font-size:13px;font-family:inherit;
+  background:var(--surface);border:1px solid var(--line-2);color:var(--ink-2);
+}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn.sm{padding:4px 10px;font-size:12px;}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:#fff;}
+.btn.primary:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn.warm{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn.warm:hover{background:var(--ink);border-color:var(--ink);color:#fff;}
+.btn.danger:hover{border-color:var(--danger);color:var(--danger);}
+.btn.undo{background:var(--accent);border-color:var(--accent);color:#fff;}
+.sel{background:var(--surface);color:var(--ink);border:1px solid var(--line-2);padding:5px 8px;font-size:13px;font-family:inherit;cursor:pointer;outline:none;}
+.sel:hover,.sel:focus{border-color:var(--ink);}
+.tg{
+  display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--line-2);padding:4px 9px;
+  font-size:12px;font-family:inherit;color:var(--ink-2);
+}
+.tg .sw{width:26px;height:14px;flex:none;position:relative;background:var(--line-2);}
+.tg .sw::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;background:#fff;transition:transform .15s;}
+.tg[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);}
+.tg[aria-pressed="true"] .sw{background:var(--ink);}
+.tg[aria-pressed="true"] .sw::after{transform:translateX(12px);}
+.tg .st{font-size:11px;color:var(--ink-4);}
+.tg[aria-pressed="true"] .st{color:var(--accent);}
+
+.slider{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3);white-space:nowrap;}
+.slider output{color:var(--ink);font-weight:700;min-width:24px;text-align:right;font-variant-numeric:tabular-nums;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:96px;height:22px;background:transparent;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--line-2);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:16px;margin-top:-7px;background:var(--ink);border:0;}
+input[type=range]:hover::-webkit-slider-thumb{background:var(--accent);}
+input[type=range]::-moz-range-track{height:3px;background:var(--line-2);}
+input[type=range]::-moz-range-thumb{width:12px;height:16px;border:0;border-radius:0;background:var(--ink);}
+
+/* ===== 字形带 ===== */
+.tape-wrap{border:1px solid var(--line-2);}
+.tape-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--line);}
+.tape{
+  --gs:44px;--tk:2px;--lg:6px;--fg:var(--ink);--label:#3a3833;--muted:var(--ink-4);
+  position:relative;margin:9px 10px;padding:10px 12px;min-height:104px;max-height:230px;
+  overflow-y:auto;overflow-x:hidden;border:1px solid var(--line);background:#fff;
+}
+.tape.night{--fg:#f2f0eb;--label:#d2cec5;--muted:#8b877e;background:#16181a;border-color:#33363a;}
+.tape.transparent{background-color:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M0 0h8v8H0zM8 8h8v8H8z' fill='%23e4e1d9'/%3E%3C/svg%3E");}
+.tape.center .line{justify-content:center;}
+.tape.right .line{justify-content:flex-end;}
+.line{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--tk);margin-bottom:var(--lg);}
+.line:last-child{margin-bottom:0;}
+.cell{
+  --hue:var(--ink);
+  position:relative;flex:none;cursor:pointer;user-select:none;text-align:center;
+  width:calc(var(--gs) * .94);padding:2px 1px 3px;border:1px solid transparent;
+}
+.cell:hover{border-color:var(--hue);background:color-mix(in srgb,var(--hue) 10%,transparent);}
+.cell.sel{border-color:var(--hue);background:color-mix(in srgb,var(--hue) 18%,transparent);}
+.gly{font-size:var(--gs);line-height:1.1;color:var(--fg);pointer-events:none;height:calc(var(--gs) * 1.2);display:flex;align-items:flex-end;justify-content:center;}
+.gly.big-h{font-size:calc(var(--gs) * 1.42);}
+.real{
+  font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  font-size:clamp(10px,calc(var(--gs) * .34),16px);font-weight:700;line-height:1.25;letter-spacing:0;
+  color:var(--label);pointer-events:none;margin-top:3px;padding-top:2px;border-top:2px solid var(--hue);
+}
+.cell.sp{width:calc(var(--gs) * .52);}
+.cell.sp .gly{opacity:0;}
+.cell.nl{width:calc(var(--gs) * .66);}
+.cell.nl .gly{font-family:"Segoe UI",system-ui,sans-serif;font-size:calc(var(--gs) * .58);color:var(--muted);}
+.cell.nl .real{color:var(--muted);}
+.cell.miss .gly{font-family:"Segoe UI",system-ui,sans-serif;font-size:calc(var(--gs) * .66);opacity:.5;}
+.cell.miss .real{border-top-color:var(--danger);border-top-style:dotted;color:var(--danger);}
+.tape.night .cell.miss .real{border-top-color:#e59a86;color:#e59a86;}
+.tape.night .cell.miss .gly{opacity:.7;}
+/* 新录入的字符只做滚动定位，不再叠加位移与闪色动画 */
+.tape-empty{display:flex;align-items:center;min-height:88px;color:var(--muted);font-size:13px;}
+.legend{display:flex;flex-wrap:wrap;gap:6px;padding:0 10px 8px;}
+.legend:empty{display:none;}
+.legend span{--hue:var(--ink);display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:11.5px;color:var(--ink-2);border:1px solid var(--line);padding:2px 8px;}
+.legend span:hover{border-color:var(--hue);color:var(--ink);}
+.legend i{width:7px;height:7px;flex:none;background:var(--hue);}
+.ctrl{display:flex;align-items:center;gap:9px 14px;flex-wrap:wrap;padding:9px 10px;border-top:1px solid var(--line);background:var(--surface-2);}
+.ctl{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3);white-space:nowrap;}
+.ctl .sel{padding:3px 6px;font-size:12px;}
+.swatch{-webkit-appearance:none;appearance:none;width:28px;height:24px;padding:0;cursor:pointer;background:var(--surface);border:1px solid var(--line-2);}
+.swatch::-webkit-color-swatch-wrapper{padding:2px;}
+.swatch::-webkit-color-swatch{border:0;}
+.swatch::-moz-color-swatch{border:0;}
+.swatch:hover{border-color:var(--ink);}
+.swatch:disabled{opacity:.5;cursor:default;}
+.swatch.low{border-color:var(--danger);box-shadow:inset 0 0 0 1px var(--danger);}
+.ctrl .warn{font-size:11.5px;color:var(--danger);}
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
+.bar .note{margin-left:0;}
+.bar .btn-install{
+  margin-left:auto;white-space:nowrap;
+  background:var(--surface-2);border-color:var(--line);color:var(--ink-3);
+}
+.bar .btn-install:hover{background:var(--surface-3);border-color:var(--line-2);color:var(--ink-2);}
+
+/* ===== 全字体预览 ===== */
+.fp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0 16px;}
+.fp-row{--hue:var(--ink);display:flex;align-items:center;gap:9px;padding:5px 6px;border-bottom:1px solid var(--line);cursor:pointer;min-width:0;}
+.fp-row:hover{background:var(--surface-2);}
+.fp-row.on{background:color-mix(in srgb,var(--hue) 9%,#fff);box-shadow:inset 2px 0 0 var(--hue);}
+.fp-name{flex:none;width:100px;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--hue);}
+.fp-name i{width:7px;height:7px;flex:none;background:var(--hue);}
+.fp-txt{flex:1 1 auto;min-width:0;font-size:21px;line-height:1.4;color:var(--ink);white-space:pre;overflow-x:auto;overflow-y:hidden;}
+.fp-txt::-webkit-scrollbar{height:6px;}
+.fp-txt .fallback{opacity:.35;text-decoration:underline dotted var(--danger);}
+.fp-txt .empty{color:var(--ink-4);font-size:14px;}
+.fp-br{font-size:12px;color:var(--ink-4);padding:0 4px;}
+.fp-miss{flex:none;min-width:40px;text-align:right;font-size:10.5px;font-weight:700;color:var(--warn);}
+
+/* ===== 对照表 ===== */
+.tbl-ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px;}
+.tbl-ctrl .sel{flex:1 1 auto;min-width:0;}
+.tbl-search{flex:1 1 auto;min-width:0;background:var(--surface-2);border:1px solid var(--line-2);padding:5px 8px;font-size:13px;font-family:inherit;color:var(--ink);outline:none;}
+.tbl-search:focus{border-color:var(--ink);background:var(--surface);}
+.tbl-count{font-size:11.5px;color:var(--ink-3);margin-bottom:8px;}
+.tbl-count b{color:var(--ink);}
+.tbl-body{display:block;max-height:min(62vh,660px);overflow-y:auto;overflow-x:hidden;padding-right:4px;}
+.tbl-sec{--hue:var(--ink);margin-bottom:12px;}
+.tbl-sec:last-child{margin-bottom:0;}
+.tbl-h{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:8px;padding:5px 7px;margin-bottom:6px;background:color-mix(in srgb,var(--hue) 9%,#fff);border:1px solid var(--line);border-left:3px solid var(--hue);}
+.fh-name{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:700;color:var(--hue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fh-count{flex:none;font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums;}
+.fh-only{flex:none;min-height:24px;padding:3px 9px;font-size:11px;}
+.tbl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:5px;}
+.tcell{min-width:0;background:var(--surface-2);border:1px solid var(--line);padding:5px 2px 6px;text-align:center;cursor:pointer;}
+.tcell:hover{border-color:var(--accent);background:var(--surface);}
+.tglyph{font-size:29px;line-height:1.1;color:var(--ink);height:42px;display:flex;align-items:flex-end;justify-content:center;}
+.tglyph.big-h{font-size:41px;}
+.tlabel{font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;font-size:15px;font-weight:700;color:#3a3833;margin-top:3px;line-height:1.2;letter-spacing:0;}
+.tcell.disabled{cursor:not-allowed;background:var(--surface-3);}
+.tcell.disabled:hover{border-color:var(--line);background:var(--surface-3);}
+.tcell.disabled .tglyph{font-family:"Segoe UI",system-ui,sans-serif;font-size:22px;color:var(--ink-4);}
+.tcell.disabled .tlabel{color:var(--ink-4);}
+.tbl-empty{font-size:12.5px;color:var(--ink-4);padding:16px 4px;text-align:center;}
+
+/* ===== 页脚 / 提示 ===== */
+.app-foot{margin-top:6px;text-align:center;font-size:12px;color:var(--ink-3);}
+.app-foot a{color:var(--ink-3);text-decoration:none;}
+.app-foot a:hover{color:var(--accent);}
+.site-mark{margin-top:8px;text-align:center;}
+.site-mark a{font-size:15px;font-weight:700;letter-spacing:1px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line-2);}
+.site-mark a:hover{color:var(--accent);border-color:var(--accent);}
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);
+  background:var(--ink);color:#fff;padding:9px 18px;font-size:13px;letter-spacing:.5px;
+  opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:90;
+}
+.toast.show{opacity:1;transform:translateX(-50%);}
+.toast.warn{background:var(--accent);}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+@media (max-width:560px){
+  .app{padding:16px 12px 40px;}
+  .nav{padding:0 12px;gap:9px;}
+  .nav-tag{display:none;}
+  .sec{padding:12px;}
+  .kbtn{min-width:40px;height:44px;}
+  .kbtn .kg{font-size:22px;}
+  .kbtn .kg.big-h{font-size:32px;}
+  .ctrl{gap:8px 10px;padding:8px;}
+  .ctrl input[type=range]{width:70px;}
+  .tape{max-height:180px;}
+  .fp-grid{grid-template-columns:minmax(0,1fr);}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="mark font-Ragunna" aria-hidden="true">D</div>
+  <span class="nav-title">鸣潮文字转换器</span>
+  <a class="nav-tag" href="https://wuwa.huijiwiki.com/" target="_blank" rel="noopener">《鸣潮百科》灰机wiki</a>
+  <a class="nav-link" id="btnOnline" href="https://wuwa.huijiwiki.com/p/830" target="_blank" rel="noopener">前往在线版</a>
+</nav>
+
+<div class="app">
+  <div class="layout">
+    <main>
+      <section class="sec">
+        <div class="chips" id="wwFontSelect"><span class="lbl">字体</span></div>
+
+        <div class="tape-wrap">
+          <div class="tape-h">
+            <span class="lbl">鸣潮文字</span>
+            <button id="btnApplyAll" class="tg" type="button" aria-pressed="false" title="开启后，切换字体会把已输入的文字一并改为新字体">
+              <span class="sw"></span>切换已输入文字的字体<span class="st" id="wwApplyState">关</span>
+            </button>
+            <span class="note">单击字符定位光标 · 双击删除</span>
+          </div>
+          <div class="tape" id="wwTape"></div>
+          <div class="legend" id="wwTapeLegend"></div>
+          <div class="ctrl">
+            <div class="slider">字号<input type="range" id="wwSize" min="20" max="72" step="1" value="44"><output id="wwSizeOut">44</output></div>
+            <div class="slider">字距<input type="range" id="wwTrack" min="0" max="16" step="1" value="2"><output id="wwTrackOut">2</output></div>
+            <div class="slider">行距<input type="range" id="wwLead" min="0" max="40" step="1" value="6"><output id="wwLeadOut">6</output></div>
+            <label class="ctl">字色<select id="wwInk" class="sel" title="默认字色随底色自动反转"><option value="auto">默认</option><option value="custom">自定义</option></select></label>
+            <input type="color" id="wwInkColor" class="swatch" value="#1a1a18" title="自定义字色" aria-label="自定义字色">
+            <span class="warn" id="wwInkWarn" hidden>字色与底色太接近</span>
+            <label class="ctl">底色<select id="wwPaper" class="sel"><option value="white">白</option><option value="transparent">透明</option><option value="night">黑</option></select></label>
+            <label class="ctl">对齐<select id="wwAlign" class="sel"><option value="left">左</option><option value="center">中</option><option value="right">右</option></select></label>
+            <button id="btnResetType" class="btn sm">重置排版</button>
+          </div>
+        </div>
+
+        <div class="fld-h"><span class="lbl">现实文字</span><span class="note">可粘贴</span></div>
+        <textarea id="wwInput" class="ta" spellcheck="false" autocomplete="off" placeholder="敲键盘，或点下方键位、右侧对照表录入"></textarea>
+        <div class="foot">
+          <button id="btnCopyInput" class="btn sm">复制现实文字</button>
+          <button id="btnSample" class="btn sm">示例</button>
+          <button id="btnClear" class="btn sm danger">清空</button>
+          <span class="count">已输入<b id="wwCount">0</b>字符</span>
+        </div>
+
+        <div class="kb">
+          <div class="kb-h">
+            <span class="lbl">软键盘</span>
+            <span class="badge" id="wwActiveName">索拉里斯通用体</span>
+          </div>
+          <div class="kb-rows" id="wwKeyboardKeys"></div>
+        </div>
+
+        <div class="bar">
+          <select id="wwExportScope" class="sel" title="导出范围">
+            <option value="mixed">当前排版（混合字体）</option>
+            <option value="active">仅当前字体</option>
+            <option value="all">全部文字对照</option>
+          </select>
+          <select id="wwExportFormat" class="sel" title="导出格式">
+            <option value="png">PNG位图</option>
+            <option value="svg">矢量SVG</option>
+          </select>
+          <button id="btnExport" class="btn primary">导出图片</button>
+          <button id="btnInstallFonts" class="btn btn-install" type="button" title="安装全部鸣潮字体">安装字体包</button>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-h"><span class="sec-t">全字体预览</span><span class="note">点击切换键盘字体</span></div>
+        <div class="fp-grid" id="wwPreview"></div>
+      </section>
+    </main>
+
+    <aside class="side">
+      <section class="sec" id="wwTablePanel">
+        <div class="sec-h"><span class="sec-t">字符对照表</span><span class="note">点击字符也可录入</span></div>
+        <div class="tbl-ctrl">
+          <select id="wwTableFont" class="sel" title="对照表字体"></select>
+          <select id="wwTableFormat" class="sel" title="保存格式">
+            <option value="png">白底PNG</option>
+            <option value="png-transparent">透明PNG</option>
+            <option value="svg">矢量SVG</option>
+          </select>
+        </div>
+        <div class="tbl-ctrl">
+          <button id="btnSaveTable" class="btn sm">保存本表</button>
+          <button id="btnSaveAllTables" class="btn sm warm">保存全部对照表</button>
+        </div>
+        <div class="tbl-ctrl">
+          <input id="wwTableSearch" class="tbl-search" type="search" placeholder="搜索字符，如A或7" autocomplete="off" spellcheck="false">
+          <button id="btnSearchClear" class="btn sm">清除</button>
+        </div>
+        <div class="tbl-count" id="wwTableCount"></div>
+        <div id="wwTableBody" class="tbl-body"></div>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="app-foot">技术支持：<a href="https://wuwa.huijiwiki.com/" target="_blank" rel="noopener">《鸣潮百科》灰机wiki</a></footer>
+  <div class="site-mark"><a href="https://wuwa.huijiwiki.com/" target="_blank" rel="noopener">wuwa.huijiwiki.com</a></div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // rows是软键盘布局；extra补齐字体cmap中存在、但键盘未列出的字符
+  var FONT_CONFIG = {
+    'font-Solaris':    { name:'索拉里斯通用体', hue:'#2f4f6b', charset:'字母、数字、常用符号', extra:'0123456789abcdefghijklmnopqrstuvwxyz',
+      rows:[["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["Z","X","C","V","B","N","M"],[",",".",":",";","/","(",")","[","]"]] },
+    'font-Ragunna':    { name:'拉古那花体', hue:'#8c2f4f', charset:'仅大小写字母', extra:'abcdefghijklmnopqrstuvwxyz',
+      rows:[["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","h","J","K","L"],["Z","X","C","V","B","N","M"]] },
+    'font-Septimont':  { name:'七丘文字', hue:'#8a5a12', filterJz:true, disabled:['J','Z'], charset:'字母，无J、Z', extra:'abcdefghijklmnopqrstuvwxyz',
+      rows:[["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["Z","X","C","V","B","N","M"]] },
+    'font-LahaiRoi':   { name:'拉海洛文字', hue:'#4a4a8a', charset:'字母、数字、希腊符号', extra:'abcdefghijklmnopqrstuvwxyzΔΘΜΠΣΦΨ𝑋%.',
+      rows:[["1","2","3","4","5","6","7","8","9","0"],["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["Z","X","C","V","B","N","M"],["δ","θ","μ","π","σ","φ","ψ","∂","𝑥"]] },
+    'font-Federation': { name:'联邦文字', hue:'#5a3f7a', charset:'仅字母与句点', extra:'abcdefghijklmnopqrstuvwxyz.',
+      rows:[["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["Z","X","C","V","B","N","M"]] },
+    'font-DigitalTube':{ name:'鸣潮数码管', hue:'#3f6b3a', charset:'仅数字0-9', extra:'',
+      rows:[["1","2","3"],["4","5","6"],["7","8","9"],["0"]] },
+    'font-OldFont':    { name:'鸣潮旧体', hue:'#7a4a2f', charset:'字母与少量标点', extra:'abcdefghijklmnopqrstuvwxyz"\',-.:',
+      rows:[["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["Z","X","C","V","B","N","M"]] },
+    'font-RRibbon':    { name:'黎那汐塔丝带体', hue:'#2f6b66', charset:'大小写字母、数字', extra:'0123456789',
+      rows:[["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["Z","X","C","V","B","N","M"],["q","w","e","r","t","y","u","i","o","p"],["a","s","d","f","g","h","j","k","l"],["z","x","c","v","b","n","m"]] }
+  };
+  var ORDER = Object.keys(FONT_CONFIG);
+  var DEFAULT_TEXT = 'WUTHERING WAVES', ALL_FONTS = '__all';
+  var familyOf = function (key) { return 'WW ' + key.slice(5); };
+
+  var SUPPORT = {};
+  ORDER.forEach(function (k) {
+    var s = {};
+    FONT_CONFIG[k].rows.forEach(function (r) { r.forEach(function (ch) { s[ch] = 1; }); });
+    Array.from(FONT_CONFIG[k].extra).forEach(function (ch) { s[ch] = 1; });
+    SUPPORT[k] = s;
+  });
+  function isDisabled(key, ch) {
+    var d = FONT_CONFIG[key].disabled;
+    return !!(d && d.indexOf(ch) !== -1);
+  }
+  // 对照表按A-Z、a-z、0-9、符号排序；软键盘仍保持QWERTY键位
+  function charRank(ch) {
+    var c = ch.codePointAt(0);
+    if (ch >= 'A' && ch <= 'Z') return c;
+    if (ch >= 'a' && ch <= 'z') return 1000 + c;
+    if (ch >= '0' && ch <= '9') return 2000 + c;
+    return 3000 + c;
+  }
+  // 对照表展示过滤：仅作用于TABLE_CHARS（网页表格与导出图片），不改变软键盘与录入支持
+  // 拉海洛有对应小写现实文字的大写字符不单独成格，字形由小写格子展示
+  var TABLE_VIEW = {
+    'font-Solaris':    { noLower:true, noDigit:true },
+    'font-Ragunna':    { lowerOnly:'h' },
+    'font-Septimont':  { noLower:true },
+    'font-LahaiRoi':   { noLower:true, hideChars:'ΔΘΜΠΣΦΨ𝑋' },
+    'font-Federation': { noLower:true },
+    'font-OldFont':    { noLower:true },
+    'font-RRibbon':    { noDigit:true }
+  };
+  var TABLE_CHARS = {};
+  ORDER.forEach(function (k) {
+    var v = TABLE_VIEW[k] || {};
+    var keptLower = function (ch) { return !!v.lowerOnly && v.lowerOnly.indexOf(ch) !== -1; };
+    var list = Object.keys(SUPPORT[k]).filter(function (ch) {
+      if (v.hideChars && v.hideChars.indexOf(ch) !== -1) return false;
+      if (ch >= 'a' && ch <= 'z') return keptLower(ch) || (!v.noLower && !v.lowerOnly);
+      if (ch >= '0' && ch <= '9') return !v.noDigit;
+      return true;
+    });
+    // 单独保留的小写字母紧跟同名大写字母之后，不落到整组大写字母末尾
+    list.sort(function (a, b) {
+      var ra = keptLower(a) ? charRank(a.toUpperCase()) + .5 : charRank(a);
+      var rb = keptLower(b) ? charRank(b.toUpperCase()) + .5 : charRank(b);
+      return ra - rb;
+    });
+    TABLE_CHARS[k] = list;
+  });
+  function blocked(key, ch) { return isDisabled(key, ch) || isDisabled(key, ch.toUpperCase()); }
+  function supports(key, ch) { return ch === ' ' || ch === '\n' || ch === '\t' || !!SUPPORT[key][ch]; }
+  // 拉古那花体的独立小写h需放大展示（不影响成段文本中的h）
+  function isBigH(key, ch) { return key === 'font-Ragunna' && ch === 'h'; }
+  function filterText(key, text) { return FONT_CONFIG[key].filterJz ? text.replace(/[JjZz]/g, '') : text; }
+  // 拉海洛文字：小写希腊字母是现实文字，鸣潮字形统一用对应的大写字母展示
+  var LAHAI_UPPER = { 'δ':'Δ', 'θ':'Θ', 'μ':'Μ', 'π':'Π', 'σ':'Σ', 'φ':'Φ', 'ψ':'Ψ', '𝑥':'𝑋' };
+  function glyphOf(key, ch) { return key === 'font-LahaiRoi' && LAHAI_UPPER[ch] ? LAHAI_UPPER[ch] : ch; }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var ta = $('wwInput'), kbKeys = $('wwKeyboardKeys'), tape = $('wwTape');
+  var preview = $('wwPreview'), tableBody = $('wwTableBody'), tableFont = $('wwTableFont');
+
+  var chars = [];                 // [{ch,key}] —— 唯一文本缓冲，带逐字字体标签
+  var activeFont = 'font-Solaris', applyToAll = false;
+  var TYPE_DEFAULTS = { size:44, track:2, lead:6, ink:'auto', inkColor:'#1a1a18', paper:'white', align:'left' };
+  var previewSize = 44, tracking = 2, lineGap = 6;
+  var ink = 'auto', inkColor = '#1a1a18', paper = 'white', align = 'left';
+  var keyMap = {}, funcKeys = {}, popIndex = -1;
+
+  function plain() { return chars.map(function (c) { return c.ch; }).join(''); }
+  function cpOffset(i) { var n = 0; for (var k = 0; k < i; k++) n += chars[k].ch.length; return n; }
+  function lighten(hex, t) {
+    var n = parseInt(hex.slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
+    r = Math.round(r + (255 - r) * t); g = Math.round(g + (255 - g) * t); b = Math.round(b + (255 - b) * t);
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  }
+  function paperBg() { return paper === 'night' ? '#16181a' : '#ffffff'; }
+  function glyphInk() { return ink === 'custom' ? inkColor : (paper === 'night' ? '#f2f0eb' : '#1a1a18'); }
+  function contrast(a, b) {
+    function lum(hex) {
+      var n = parseInt(hex.slice(1), 16);
+      var v = [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (x) {
+        x /= 255; return x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4);
+      });
+      return .2126 * v[0] + .7152 * v[1] + .0722 * v[2];
+    }
+    var x = lum(a), y = lum(b);
+    return (Math.max(x, y) + .05) / (Math.min(x, y) + .05);
+  }
+
+  // ---- 本地记忆 ----
+  var LS = 'ww-font-converter-v1';
+  function save() {
+    try {
+      localStorage.setItem(LS, JSON.stringify({
+        chars: chars, activeFont: activeFont, applyToAll: applyToAll,
+        previewSize: previewSize, tracking: tracking, lineGap: lineGap,
+        ink: ink, inkColor: inkColor, paper: paper, align: align, tableFont: tableFont.value
+      }));
+    } catch (e) {}
+  }
+  var restoredTable = null, hadSave = false;
+  function load() {
+    try {
+      var d = JSON.parse(localStorage.getItem(LS) || 'null');
+      if (!d) return;
+      hadSave = true;
+      if (Array.isArray(d.chars)) chars = d.chars.filter(function (c) { return c && typeof c.ch === 'string' && FONT_CONFIG[c.key]; });
+      if (FONT_CONFIG[d.activeFont]) activeFont = d.activeFont;
+      applyToAll = !!d.applyToAll;
+      if (typeof d.previewSize === 'number') previewSize = Math.min(72, Math.max(20, d.previewSize));
+      if (typeof d.tracking === 'number') tracking = Math.min(16, Math.max(0, d.tracking));
+      if (typeof d.lineGap === 'number') lineGap = Math.min(40, Math.max(0, d.lineGap));
+      if (d.ink === 'auto' || d.ink === 'custom') ink = d.ink;
+      if (typeof d.inkColor === 'string' && /^#[0-9a-f]{6}$/i.test(d.inkColor)) inkColor = d.inkColor;
+      if (['white', 'transparent', 'night'].indexOf(d.paper) !== -1) paper = d.paper;
+      if (['left', 'center', 'right'].indexOf(d.align) !== -1) align = d.align;
+      if (FONT_CONFIG[d.tableFont] || d.tableFont === ALL_FONTS) restoredTable = d.tableFont;
+    } catch (e) {}
+  }
+
+  // ---- 提示 / 复制 ----
+  var toastTimer;
+  function toast(msg, warn) {
+    var el = $('toast'); el.textContent = msg;
+    el.classList.toggle('warn', !!warn); el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove('show'); }, 1700);
+  }
+  function copyText(t) {
+    if (!t) { toast('没有可复制的内容', true); return; }
+    function fallback() {
+      var el = document.createElement('textarea'); el.value = t;
+      el.style.position = 'fixed'; el.style.opacity = '0'; document.body.appendChild(el); el.select();
+      try { document.execCommand('copy'); toast('已复制到剪贴板'); } catch (e) { toast('复制失败，请手动选择', true); }
+      document.body.removeChild(el);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(function () { toast('已复制到剪贴板'); }, fallback);
+    } else fallback();
+  }
+
+  // ---- 字体选择 ----
+  var chipEls = {};
+  ORDER.forEach(function (key) {
+    var el = document.createElement('button');
+    el.type = 'button'; el.className = 'chip'; el.style.setProperty('--hue', FONT_CONFIG[key].hue);
+    el.appendChild(document.createElement('i'));
+    el.appendChild(document.createTextNode(FONT_CONFIG[key].name));
+    el.title = FONT_CONFIG[key].charset;
+    el.addEventListener('click', function () { setActiveFont(key); });
+    $('wwFontSelect').appendChild(el); chipEls[key] = el;
+  });
+  function setActiveFont(key) {
+    activeFont = key;
+    if (applyToAll) chars.forEach(function (c) { c.key = key; });
+    renderKeyboard(); syncActive(); render(); save();
+  }
+  function syncActive() {
+    ORDER.forEach(function (k) {
+      chipEls[k].classList.toggle('on', k === activeFont);
+      fpRows[k].row.classList.toggle('on', k === activeFont);
+    });
+    var c = FONT_CONFIG[activeFont], badge = $('wwActiveName');
+    badge.textContent = c.name; badge.style.background = c.hue;
+  }
+
+  // ---- 软键盘 ----
+  function pulse(el, cls) {
+    if (!el) return;
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    setTimeout(function () { el.classList.remove(cls); }, 320);
+  }
+  function mkFunc(id, label, fn) {
+    var b = document.createElement('div');
+    b.className = 'kbtn func'; b.textContent = label;
+    b.addEventListener('click', function (e) { e.preventDefault(); fn(); ta.focus(); });
+    funcKeys[id] = b;
+    return b;
+  }
+  function renderKeyboard() {
+    kbKeys.innerHTML = ''; keyMap = {}; funcKeys = {};
+    FONT_CONFIG[activeFont].rows.forEach(function (r) {
+      var row = document.createElement('div'); row.className = 'kb-row';
+      r.forEach(function (ch) {
+        var dis = isDisabled(activeFont, ch);
+        var b = document.createElement('div');
+        b.className = 'kbtn' + (dis ? ' disabled' : ' ' + activeFont);
+        var g = document.createElement('span');
+        g.className = 'kg' + (isBigH(activeFont, ch) ? ' big-h' : '');
+        g.textContent = glyphOf(activeFont, ch);
+        b.appendChild(g);
+        if (dis) {
+          b.setAttribute('aria-disabled', 'true'); b.title = '七丘文字无此字母';
+        } else {
+          var real = document.createElement('span'); real.className = 'kr'; real.textContent = ch;
+          b.appendChild(real);
+          b.title = '输入' + ch;
+          b.addEventListener('click', function (e) { e.preventDefault(); insertChar(ch); ta.focus(); });
+        }
+        keyMap[ch] = b;
+        row.appendChild(b);
+      });
+      kbKeys.appendChild(row);
+    });
+    var fr = document.createElement('div'); fr.className = 'kb-row';
+    fr.appendChild(mkFunc('clear', '✕ 清空', function () { if (clearSnapshot) undoClear(); else clearAll(); }));
+    fr.appendChild(mkFunc('space', '␣ 空格', function () { insertChar(' '); }));
+    fr.appendChild(mkFunc('enter', '↵ 换行', function () { insertChar('\n'); }));
+    fr.appendChild(mkFunc('back', '⌫ 退格', backspace));
+    kbKeys.appendChild(fr);
+    syncClearButtons();
+  }
+  // 点键时不让textarea失焦，光标位置得以保留
+  kbKeys.addEventListener('mousedown', function (e) { if (e.target.closest('.kbtn')) e.preventDefault(); });
+
+  // ---- 文本编辑 ----
+  function insertChar(ch) {
+    if (blocked(activeFont, ch)) {
+      pulse(keyMap[ch.toUpperCase()], 'denied');
+      toast(FONT_CONFIG[activeFont].name + '没有字母' + ch.toUpperCase(), true);
+      return;
+    }
+    ta.setRangeText(ch, ta.selectionStart, ta.selectionEnd, 'end');
+    popIndex = Array.from(ta.value.slice(0, ta.selectionStart)).length - 1;
+    syncFromTextarea();
+  }
+  function backspace() {
+    var s = ta.selectionStart, e = ta.selectionEnd;
+    if (s === e && s > 0) s = Array.from(ta.value.slice(0, s)).slice(0, -1).join('').length;
+    ta.setRangeText('', s, e, 'end');
+    syncFromTextarea();
+  }
+  var clearSnapshot = null, clearTimer = null;
+  function syncClearButtons() {
+    var undo = !!clearSnapshot;
+    $('btnClear').textContent = undo ? '撤销清空' : '清空';
+    $('btnClear').classList.toggle('undo', undo);
+    var k = funcKeys.clear;
+    if (k) { k.textContent = undo ? '↺ 撤销清空' : '✕ 清空'; k.classList.toggle('undo', undo); }
+  }
+  function disarmUndo() {
+    clearTimeout(clearTimer); clearTimer = null;
+    syncClearButtons();
+  }
+  function clearAll() {
+    if (!chars.length) { toast('已经是空的', true); return; }
+    clearSnapshot = chars.slice();
+    ta.value = ''; chars = []; render(); save();
+    clearTimeout(clearTimer); clearTimer = setTimeout(function () { clearSnapshot = null; disarmUndo(); }, 6000);
+    syncClearButtons();
+    toast('已清空 · 6秒内可撤销');
+  }
+  function undoClear() {
+    chars = clearSnapshot.slice(); clearSnapshot = null; disarmUndo();
+    ta.value = plain(); render(); save(); toast('已恢复');
+  }
+
+  // 按码点做前后缀diff，未改动区域保留原有字体标签
+  function syncFromTextarea() {
+    var prev = chars.map(function (c) { return c.ch; });
+    var next = Array.from(ta.value);
+    var p = 0, mp = Math.min(prev.length, next.length);
+    while (p < mp && prev[p] === next[p]) p++;
+    var s = 0, ms = Math.min(prev.length - p, next.length - p);
+    while (s < ms && prev[prev.length - 1 - s] === next[next.length - 1 - s]) s++;
+    var out = chars.slice(0, p);
+    next.slice(p, next.length - s).forEach(function (ch) { out.push({ ch: ch, key: activeFont }); });
+    chars = out.concat(s ? chars.slice(chars.length - s) : []);
+    if (clearSnapshot && chars.length) { clearSnapshot = null; disarmUndo(); }
+    render(); save();
+  }
+  ta.addEventListener('input', syncFromTextarea);
+  ta.addEventListener('keydown', function (ev) {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    if (ev.key === 'Backspace') { pulse(funcKeys.back, 'hit'); return; }
+    if (ev.key === 'Enter') { pulse(funcKeys.enter, 'hit'); return; }
+    if (ev.key === ' ') { pulse(funcKeys.space, 'hit'); return; }
+    if (ev.key.length !== 1) return;
+    var ch = ev.key, up = ch.toUpperCase();
+    if (blocked(activeFont, ch)) {
+      ev.preventDefault();
+      pulse(keyMap[up], 'denied');
+      toast(FONT_CONFIG[activeFont].name + '没有字母' + up, true);
+      return;
+    }
+    pulse(keyMap[ch] || keyMap[up] || keyMap[ch.toLowerCase()], 'hit');
+  });
+
+  // ---- 渲染 ----
+  function runs() {
+    var out = [], last = null;
+    chars.forEach(function (c) {
+      if (c.key !== last) { out.push({ key: c.key, text: '' }); last = c.key; }
+      out[out.length - 1].text += c.ch;
+    });
+    return out;
+  }
+  function charLabel(ch) { return ch === '\n' ? '换行' : (ch === ' ' ? '空格' : ch); }
+  function hueOf(key) { return paper === 'night' ? lighten(FONT_CONFIG[key].hue, .55) : FONT_CONFIG[key].hue; }
+
+  // 逐字对照带：每格同时给出鸣潮文字与现实文字
+  function renderTape() {
+    tape.innerHTML = '';
+    tape.style.setProperty('--gs', previewSize + 'px');
+    tape.style.setProperty('--tk', tracking + 'px');
+    tape.style.setProperty('--lg', lineGap + 'px');
+    tape.style.setProperty('--fg', glyphInk());
+    tape.className = 'tape ' + paper + ' ' + align;
+    var legend = $('wwTapeLegend'); legend.innerHTML = '';
+    if (!chars.length) {
+      var e = document.createElement('div'); e.className = 'tape-empty';
+      tape.appendChild(e); return;
+    }
+    var mkLine = function () { var l = document.createElement('div'); l.className = 'line'; return l; };
+    var line = mkLine(), popEl = null;
+    chars.forEach(function (c, i) {
+      var nl = c.ch === '\n', sp = c.ch === ' ', ok = supports(c.key, c.ch);
+      var cell = document.createElement('div');
+      cell.className = 'cell' + (nl ? ' nl' : '') + (sp ? ' sp' : '') + (ok ? '' : ' miss');
+      cell.style.setProperty('--hue', hueOf(c.key));
+      cell.dataset.i = String(i);
+      var g = document.createElement('div');
+      g.className = 'gly ' + c.key + (isBigH(c.key, c.ch) ? ' big-h' : '');
+      g.textContent = nl ? '↵' : glyphOf(c.key, c.ch);
+      var r = document.createElement('div'); r.className = 'real';
+      r.textContent = nl ? '↵' : (sp ? '␣' : c.ch);
+      cell.appendChild(g); cell.appendChild(r);
+      cell.title = FONT_CONFIG[c.key].name + ' · ' + charLabel(c.ch) + (ok ? '' : ' · 该字体无此字形') + ' · 单击字符定位，双击删除';
+      if (i === popIndex) { cell.classList.add('pop'); popEl = cell; }
+      line.appendChild(cell);
+      if (nl) { tape.appendChild(line); line = mkLine(); }
+    });
+    if (line.children.length) tape.appendChild(line);
+    popIndex = -1;
+    if (popEl) {
+      var top = popEl.offsetTop, bot = top + popEl.offsetHeight;
+      if (bot > tape.scrollTop + tape.clientHeight) tape.scrollTop = bot - tape.clientHeight + 8;
+      else if (top < tape.scrollTop) tape.scrollTop = top - 8;
+    }
+    var rs = runs();
+    if (rs.length > 1) {
+      rs.forEach(function (r) {
+        var t = document.createElement('span');
+        t.style.setProperty('--hue', FONT_CONFIG[r.key].hue);
+        t.appendChild(document.createElement('i'));
+        t.appendChild(document.createTextNode(FONT_CONFIG[r.key].name + ' · ' + Array.from(r.text).length + '字'));
+        t.title = '点击设为键盘字体';
+        t.addEventListener('click', function () { setActiveFont(r.key); });
+        legend.appendChild(t);
+      });
+    }
+  }
+  function tapeCellAt(e) {
+    var el = e.target.closest('.cell');
+    return el ? +el.dataset.i : -1;
+  }
+  tape.addEventListener('click', function (e) {
+    var i = tapeCellAt(e); if (i < 0 || i >= chars.length) return;
+    var s = cpOffset(i);
+    ta.focus(); ta.setSelectionRange(s, s + chars[i].ch.length);
+    Array.prototype.forEach.call(tape.querySelectorAll('.cell.sel'), function (c) { c.classList.remove('sel'); });
+    e.target.closest('.cell').classList.add('sel');
+  });
+  tape.addEventListener('dblclick', function (e) {
+    var i = tapeCellAt(e); if (i < 0 || i >= chars.length) return;
+    var s = cpOffset(i), label = charLabel(chars[i].ch);
+    ta.setRangeText('', s, s + chars[i].ch.length, 'end');
+    syncFromTextarea(); ta.focus();
+    toast('已删除：' + label);
+  });
+
+  // ---- 全字体预览 ----
+  var fpRows = {};
+  ORDER.forEach(function (key) {
+    var c = FONT_CONFIG[key];
+    var row = document.createElement('div');
+    row.className = 'fp-row'; row.style.setProperty('--hue', c.hue);
+    row.title = '设为键盘字体 · ' + c.charset;
+    var name = document.createElement('span'); name.className = 'fp-name';
+    name.appendChild(document.createElement('i'));
+    name.appendChild(document.createTextNode(c.name));
+    var txt = document.createElement('div'); txt.className = 'fp-txt ' + key;
+    var miss = document.createElement('span'); miss.className = 'fp-miss';
+    row.appendChild(name); row.appendChild(txt); row.appendChild(miss);
+    row.addEventListener('click', function () { setActiveFont(key); });
+    preview.appendChild(row);
+    fpRows[key] = { row: row, txt: txt, miss: miss };
+  });
+  function renderPreview() {
+    var text = plain();
+    ORDER.forEach(function (key) {
+      var o = fpRows[key], c = FONT_CONFIG[key], list = Array.from(filterText(key, text)), missing = 0;
+      o.txt.style.letterSpacing = tracking + 'px';
+      o.txt.innerHTML = '';
+      if (!list.length) {
+        var s = document.createElement('span'); s.className = 'empty'; s.textContent = '—';
+        o.txt.appendChild(s);
+      } else {
+        var buf = '', bad = '';
+        var flush = function () {
+          if (buf) { o.txt.appendChild(document.createTextNode(buf)); buf = ''; }
+          if (bad) {
+            var b = document.createElement('span'); b.className = 'fallback';
+            b.textContent = bad; b.title = c.name + '无此字符';
+            o.txt.appendChild(b); bad = '';
+          }
+        };
+        list.forEach(function (ch) {
+          if (ch === '\n') {
+            flush();
+            var br = document.createElement('span'); br.className = 'fp-br'; br.textContent = '↵';
+            o.txt.appendChild(br); return;
+          }
+          if (supports(key, ch)) { if (bad) flush(); buf += ch; }
+          else { missing++; if (buf) flush(); bad += ch; }
+        });
+        flush();
+      }
+      var fixed = key === 'font-DigitalTube';
+      o.miss.textContent = fixed ? '仅含数字' : (missing ? ('缺' + missing) : '');
+      o.miss.title = fixed ? (c.name + '仅含数字 · ' + c.charset) : (missing ? (c.name + '缺' + missing + '个字符 · ' + c.charset) : '');
+    });
+  }
+  function render() {
+    $('wwCount').textContent = String(chars.length);
+    renderTape(); renderPreview();
+    var sw = $('wwInkColor'), low = ink === 'custom' && contrast(inkColor, paperBg()) < 3;
+    sw.disabled = ink !== 'custom';
+    if (!sw.disabled) sw.value = inkColor; else sw.value = glyphInk();
+    sw.classList.toggle('low', low);
+    sw.title = low ? '字色与底色太接近' : '自定义字色';
+    $('wwInkWarn').hidden = !low;
+  }
+
+  // ---- 字符对照表 ----
+  (function () {
+    var o = document.createElement('option'); o.value = ALL_FONTS; o.textContent = '全部文字对照';
+    tableFont.appendChild(o);
+    ORDER.forEach(function (key) {
+      var op = document.createElement('option'); op.value = key; op.textContent = FONT_CONFIG[key].name;
+      tableFont.appendChild(op);
+    });
+  })();
+  function renderTable() {
+    var q = ($('wwTableSearch').value || '').trim().toLowerCase();
+    var keys = tableFont.value === ALL_FONTS ? ORDER : [tableFont.value];
+    var multi = keys.length > 1, shown = 0, total = 0;
+    tableBody.innerHTML = '';
+    keys.forEach(function (key) {
+      var c = FONT_CONFIG[key], list = TABLE_CHARS[key];
+      total += list.length;
+      var hit = q ? list.filter(function (ch) { return ch.toLowerCase() === q; }) : list;
+      if (!hit.length) return;
+      shown += hit.length;
+      var sec = document.createElement('section');
+      sec.className = 'tbl-sec'; sec.style.setProperty('--hue', c.hue);
+      var head = document.createElement('div'); head.className = 'tbl-h';
+      var nm = document.createElement('span'); nm.className = 'fh-name';
+      nm.textContent = c.name; nm.title = c.name + ' · ' + c.charset;
+      var cnt = document.createElement('span'); cnt.className = 'fh-count';
+      cnt.textContent = q ? (hit.length + '/' + list.length) : String(list.length);
+      head.appendChild(nm); head.appendChild(cnt);
+      if (multi) {
+        var only = document.createElement('button');
+        only.type = 'button'; only.className = 'btn sm fh-only'; only.textContent = '只看';
+        only.title = '对照表只显示' + c.name;
+        only.addEventListener('click', function () { tableFont.value = key; renderTable(); save(); });
+        head.appendChild(only);
+      }
+      sec.appendChild(head);
+      var grid = document.createElement('div'); grid.className = 'tbl-grid';
+      hit.forEach(function (ch) {
+        var dis = isDisabled(key, ch);
+        var cell = document.createElement('div');
+        cell.className = 'tcell' + (dis ? ' disabled' : '');
+        var g = document.createElement('div');
+        g.className = 'tglyph ' + key + (isBigH(key, ch) ? ' big-h' : '');
+        g.textContent = glyphOf(key, ch);
+        var l = document.createElement('div'); l.className = 'tlabel'; l.textContent = ch;
+        cell.appendChild(g); cell.appendChild(l);
+        if (dis) {
+          cell.title = c.name + '无此字母';
+        } else {
+          cell.title = '录入' + ch + '（' + c.name + '）';
+          cell.addEventListener('click', function () {
+            var keep = activeFont;
+            activeFont = key; insertChar(ch); activeFont = keep;
+            render(); save();
+            toast('已录入' + ch + ' · ' + c.name);
+          });
+        }
+        grid.appendChild(cell);
+      });
+      sec.appendChild(grid);
+      tableBody.appendChild(sec);
+    });
+    if (!shown) {
+      var e = document.createElement('div'); e.className = 'tbl-empty';
+      e.textContent = q ? ('没有匹配“' + q + '”的字符') : '没有可显示的字符';
+      tableBody.appendChild(e);
+    }
+    var cntEl = $('wwTableCount'); cntEl.innerHTML = '';
+    cntEl.appendChild(document.createTextNode(q ? ('筛选“' + q + '” · 命中') : '共'));
+    var b = document.createElement('b'); b.textContent = String(shown); cntEl.appendChild(b);
+    cntEl.appendChild(document.createTextNode((q ? '/' + total : '') + '字符' + (multi ? ' · ' + keys.length + '字体' : '')));
+  }
+  tableFont.addEventListener('change', function () { renderTable(); save(); });
+  $('wwTableSearch').addEventListener('input', renderTable);
+  $('btnSearchClear').addEventListener('click', function () {
+    $('wwTableSearch').value = ''; renderTable(); $('wwTableSearch').focus();
+  });
+  tableBody.addEventListener('mousedown', function (e) {
+    if (e.target.closest('.tcell, .fh-only')) e.preventDefault();
+  });
+
+  // ---- 导出：Canvas / SVG，按真实字形度量排版防裁剪 ----
+  var PAD = 32, GLYPH_SIZE = 44, LABEL_SIZE = 15, FOOTER_SIZE = 12;
+  var MAX_W = 1000, BLOCK_GAP = 20, LABEL_GAP = 10;
+  var LABEL_FILL = '#5a5750', FOOTER_FILL = '#9c988e', DISABLED_FILL = '#c4c0b6', TABLE_LABEL_FILL = '#3a3833';
+  var FOOTER_TEXT = '《鸣潮百科》灰机wiki';
+  var T_CELL_W = 72, T_CELL_H = 88, T_GAP_X = 10, T_GAP_Y = 10, T_GLYPH = 34, T_LABEL = 15, T_TITLE = 18, T_COLS = 10;
+
+  function mctx() { return document.createElement('canvas').getContext('2d'); }
+  function wrapLine(ctx, line, maxW) {
+    if (ctx.measureText(line).width <= maxW) return [line];
+    var out = [], cur = '';
+    Array.from(line).forEach(function (ch) {
+      if (cur && ctx.measureText(cur + ch).width > maxW) { out.push(cur); cur = ch; }
+      else cur += ch;
+    });
+    if (cur) out.push(cur);
+    return out;
+  }
+  // 取出内嵌@font-face的data URI，供自包含SVG使用
+  function fontSrc(family) {
+    var sheets = document.styleSheets;
+    for (var i = 0; i < sheets.length; i++) {
+      var rules; try { rules = sheets[i].cssRules; } catch (e) { continue; }
+      if (!rules) continue;
+      for (var j = 0; j < rules.length; j++) {
+        var r = rules[j];
+        if (r.type !== CSSRule.FONT_FACE_RULE) continue;
+        if ((r.style.fontFamily || '').replace(/["']/g, '').trim() !== family) continue;
+        var m = (r.style.src || '').match(/url\(["']?(data:[^)"']+)["']?\)/);
+        if (m) return m[1];
+      }
+    }
+    return null;
+  }
+  function footerItems(y, fill) {
+    return [{ x: PAD, y: y + FOOTER_SIZE * .82, text: FOOTER_TEXT, family: 'sans-serif', size: FOOTER_SIZE, fill: fill, align: 'left' }];
+  }
+  function textLayout(blocks) {
+    var ctx = mctx(), items = [], contentW = 0, night = paper === 'night';
+    var labelFill = night ? '#a8a49a' : LABEL_FILL, footFill = night ? '#7d7a72' : FOOTER_FILL;
+    var bg = paper === 'white' ? '#ffffff' : (night ? '#16181a' : null);
+    var fill = glyphInk();
+    blocks.forEach(function (b) {
+      var fam = familyOf(b.key), lines = [], widths = [];
+      ctx.font = GLYPH_SIZE + 'px "' + fam + '", sans-serif';
+      b.text.split('\n').forEach(function (ln) {
+        wrapLine(ctx, ln, MAX_W).forEach(function (w) { lines.push(w); widths.push(ctx.measureText(w).width); });
+      });
+      if (!lines.length) { lines = ['']; widths = [0]; }
+      var asc = 0, desc = 0;
+      lines.forEach(function (ln) {
+        var m = ctx.measureText(ln || ' ');
+        if (m.width > contentW) contentW = m.width;
+        if (m.actualBoundingBoxAscent > asc) asc = m.actualBoundingBoxAscent;
+        if (m.actualBoundingBoxDescent > desc) desc = m.actualBoundingBoxDescent;
+      });
+      b._lines = lines; b._widths = widths; b._fam = fam;
+      b._asc = asc || GLYPH_SIZE * .8; b._desc = desc || GLYPH_SIZE * .25;
+      ctx.font = LABEL_SIZE + 'px sans-serif';
+      var lm = ctx.measureText(b.name);
+      if (lm.width > contentW) contentW = lm.width;
+      b._labelW = lm.width; b._labelAsc = lm.actualBoundingBoxAscent || LABEL_SIZE * .8;
+    });
+    ctx.font = FOOTER_SIZE + 'px sans-serif';
+    contentW = Math.max(240, Math.min(MAX_W, Math.ceil(Math.max(contentW, ctx.measureText(FOOTER_TEXT).width))));
+    var ax = function (w) { return align === 'center' ? PAD + (contentW - w) / 2 : (align === 'right' ? PAD + contentW - w : PAD); };
+    var y = PAD;
+    blocks.forEach(function (b) {
+      items.push({ x: ax(b._labelW), y: y + b._labelAsc, text: b.name, family: 'sans-serif', size: LABEL_SIZE, fill: labelFill, align: 'left' });
+      y += LABEL_SIZE + LABEL_GAP;
+      b._lines.forEach(function (ln, li) {
+        items.push({ x: ax(b._widths[li]), y: y + b._asc, text: ln, family: '"' + b._fam + '", sans-serif', size: GLYPH_SIZE, fill: fill, align: 'left' });
+        y += b._asc + b._desc + lineGap;
+      });
+      y += BLOCK_GAP;
+    });
+    return { W: contentW + PAD * 2, H: Math.ceil(y + FOOTER_SIZE + PAD), items: items.concat(footerItems(y, footFill)), bg: bg };
+  }
+  function gridWidth() { return T_COLS * T_CELL_W + (T_COLS - 1) * T_GAP_X; }
+  function blockHeight(key) {
+    var n = Math.ceil(TABLE_CHARS[key].length / T_COLS);
+    return T_TITLE + 16 + n * T_CELL_H + (n - 1) * T_GAP_Y;
+  }
+  function tableBlock(key, top, left) {
+    var c = FONT_CONFIG[key], fam = familyOf(key), items = [], gridTop = top + T_TITLE + 16;
+    items.push({ x: left, y: top + T_TITLE * .8, text: c.name + ' · 字符对照表', family: 'sans-serif', size: T_TITLE, fill: LABEL_FILL, align: 'left' });
+    TABLE_CHARS[key].forEach(function (ch, i) {
+      var cx = left + (i % T_COLS) * (T_CELL_W + T_GAP_X), cy = gridTop + Math.floor(i / T_COLS) * (T_CELL_H + T_GAP_Y);
+      var dis = isDisabled(key, ch), gs = isBigH(key, ch) ? Math.round(T_GLYPH * 1.5) : T_GLYPH;
+      items.push({ x: cx + T_CELL_W / 2, y: cy + 48, text: glyphOf(key, ch), family: '"' + fam + '", sans-serif', size: gs, fill: dis ? DISABLED_FILL : '#1a1a18', align: 'center' });
+      items.push({ x: cx + T_CELL_W / 2, y: cy + 74, text: ch, family: 'sans-serif', size: T_LABEL, fill: dis ? DISABLED_FILL : TABLE_LABEL_FILL, align: 'center' });
+    });
+    return items;
+  }
+  function tableLayout(key) {
+    var h = blockHeight(key);
+    return {
+      W: gridWidth() + PAD * 2, H: Math.ceil(PAD + h + 18 + FOOTER_SIZE + PAD),
+      items: tableBlock(key, PAD, PAD).concat(footerItems(PAD + h + 18, FOOTER_FILL)), bg: '#ffffff'
+    };
+  }
+  function allTablesLayout() {
+    var ctx = mctx(); ctx.font = FOOTER_SIZE + 'px sans-serif';
+    var w = gridWidth(), maxW = Math.max(w, ctx.measureText(FOOTER_TEXT).width), items = [], y = PAD;
+    ORDER.forEach(function (k) {
+      items = items.concat(tableBlock(k, y, PAD + (maxW - w) / 2));
+      y += blockHeight(k) + 30;
+    });
+    return { W: Math.ceil(maxW + PAD * 2), H: Math.ceil(y + FOOTER_SIZE + PAD), items: items.concat(footerItems(y, FOOTER_FILL)), bg: '#ffffff' };
+  }
+  function drawCanvas(layout, transparent) {
+    var scale = 2, cv = document.createElement('canvas');
+    cv.width = Math.ceil(layout.W * scale); cv.height = Math.ceil(layout.H * scale);
+    var ctx = cv.getContext('2d');
+    ctx.scale(scale, scale);
+    if (layout.bg && !transparent) { ctx.fillStyle = layout.bg; ctx.fillRect(0, 0, layout.W, layout.H); }
+    layout.items.forEach(function (it) {
+      ctx.font = it.size + 'px ' + it.family;
+      ctx.fillStyle = it.fill;
+      ctx.textAlign = it.align;
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(it.text, it.x, it.y);
+    });
+    return cv.toDataURL('image/png');
+  }
+  function xmlEsc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function buildSVG(layout, families, transparent) {
+    var defs = '', seen = {};
+    families.forEach(function (fam) {
+      if (seen[fam]) return;
+      seen[fam] = 1;
+      var src = fontSrc(fam);
+      if (src) defs += "@font-face{font-family:'" + fam + "';src:url(" + src + ") format('truetype');}";
+    });
+    var p = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + layout.W + '" height="' + layout.H + '" viewBox="0 0 ' + layout.W + ' ' + layout.H + '">',
+      '<defs><style>' + defs + '</style></defs>'];
+    if (layout.bg && !transparent) p.push('<rect x="0" y="0" width="' + layout.W + '" height="' + layout.H + '" fill="' + layout.bg + '"/>');
+    layout.items.forEach(function (it) {
+      var anchor = it.align === 'center' ? 'middle' : (it.align === 'right' ? 'end' : 'start');
+      p.push('<text x="' + it.x + '" y="' + it.y + '" font-family="' + xmlEsc(it.family) + '" font-size="' + it.size + '" fill="' + it.fill + '" text-anchor="' + anchor + '" xml:space="preserve">' + xmlEsc(it.text) + '</text>');
+    });
+    p.push('</svg>');
+    return p.join('');
+  }
+  function downloadDataUrl(dataUrl, name) {
+    var a = document.createElement('a'); a.href = dataUrl; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  // 字体包：把内嵌字体还原为TTF，附上自包含安装脚本，打包成ZIP下载
+  var FONT_FILE_NAMES = {
+    'font-Solaris':    'SolarisUniversal索拉里斯通用体.ttf',
+    'font-Ragunna':    'Ragunna拉古那花体.ttf',
+    'font-Septimont':  'Septimont七丘文字.ttf',
+    'font-LahaiRoi':   'Lahai-Roi拉海洛文字.ttf',
+    'font-Federation': 'Federation联邦文字.ttf',
+    'font-DigitalTube':'DigitalTube鸣潮数码管.ttf',
+    'font-OldFont':    'OldFont鸣潮旧体.ttf',
+    'font-RRibbon':    'RinascitaRibbon黎那汐塔丝带体.ttf'
+  };
+  var FONT_README = [
+    '鸣潮字体包安装说明',
+    '',
+    '【安装】',
+    '双击「一键安装.bat」即可安装全部字体，',
+    '安装完之后需要重新打开Word、PS等软件才能在字体列表中看到。',
+    '',
+    '【字体名称】',
+    '索拉里斯通用体：WuWa Solaris Universal',
+    '拉古那花体：WuWa Ragunna Decorated',
+    '七丘文字：WuWa Septimont Digital',
+    '拉海洛文字：WuWa Lahai-Roi Regular',
+    '联邦文字：WuWa Federation',
+    '鸣潮数码管：WuWa Digital Tube',
+    '鸣潮旧体：WW Old Font',
+    '黎那汐塔丝带体：WuWa Rinascita Ribbon',
+    '',
+    '【卸载】',
+    '双击「一键卸载.bat」即可卸载全部字体。',
+    ''
+  ].join('\r\n');
+  var CRC_TABLE = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(buf) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function utf8Bytes(str) { return new TextEncoder().encode(str); }
+  function b64Bytes(b64) {
+    var bin = atob(b64), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  // 无压缩ZIP，条目名按UTF-8标记，Windows资源管理器可直接打开
+  function makeZip(entries) {
+    var parts = [], central = [], offset = 0;
+    entries.forEach(function (e) {
+      var name = utf8Bytes(e.name), data = e.data, crc = crc32(data);
+      var lh = new Uint8Array(30 + name.length), lv = new DataView(lh.buffer);
+      lv.setUint32(0, 0x04034B50, true); lv.setUint16(4, 20, true);
+      lv.setUint16(6, 0x0800, true); lv.setUint16(8, 0, true);
+      lv.setUint16(10, 0, true); lv.setUint16(12, 0x0021, true);
+      lv.setUint32(14, crc, true); lv.setUint32(18, data.length, true); lv.setUint32(22, data.length, true);
+      lv.setUint16(26, name.length, true); lv.setUint16(28, 0, true);
+      lh.set(name, 30);
+      parts.push(lh, data);
+      var ch = new Uint8Array(46 + name.length), cv = new DataView(ch.buffer);
+      cv.setUint32(0, 0x02014B50, true); cv.setUint16(4, 0x031E, true); cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true); cv.setUint16(10, 0, true);
+      cv.setUint16(12, 0, true); cv.setUint16(14, 0x0021, true);
+      cv.setUint32(16, crc, true); cv.setUint32(20, data.length, true); cv.setUint32(24, data.length, true);
+      cv.setUint16(28, name.length, true); cv.setUint32(42, offset, true);
+      ch.set(name, 46);
+      central.push(ch);
+      offset += lh.length + data.length;
+    });
+    var cdSize = central.reduce(function (s, c) { return s + c.length; }, 0);
+    var end = new Uint8Array(22), ev = new DataView(end.buffer);
+    ev.setUint32(0, 0x06054B50, true);
+    ev.setUint16(8, entries.length, true); ev.setUint16(10, entries.length, true);
+    ev.setUint32(12, cdSize, true); ev.setUint32(16, offset, true);
+    return new Blob(parts.concat(central, [end]), { type: 'application/zip' });
+  }
+  // 脚本自带字体数据，从压缩包里单独双击运行也能完成安装；内容保持纯ASCII
+  function installerBat(fonts) {
+    var L = [
+      '@echo off',
+      'setlocal',
+      'set "FD=%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts"',
+      'if not exist "%FD%" mkdir "%FD%" >nul 2>&1',
+      'set "B64=%TEMP%\\ww_font_%RANDOM%.b64"',
+      'set "RK=HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts"',
+      'echo Installing Wuthering Waves fonts for the current user...'
+    ];
+    fonts.forEach(function (f) {
+      L.push('del /q "%FD%\\' + f.install + '.ttf" >nul 2>&1');
+      var first = true;
+      for (var i = 0; i < f.b64.length; i += 1000) {
+        L.push((first ? '> ' : '>>') + '"%B64%" echo ' + f.b64.slice(i, i + 1000));
+        first = false;
+      }
+      L.push('certutil -decode "%B64%" "%FD%\\' + f.install + '.ttf" >nul');
+      L.push('reg add "%RK%" /v "WuWa ' + f.ascii + ' (TrueType)" /t REG_SZ /d "%FD%\\' + f.install + '.ttf" /f >nul');
+    });
+    L.push('del /q "%B64%" >nul 2>&1');
+    L.push('echo Done. Reopen other apps, then the fonts are ready.');
+    L.push('echo.');
+    L.push('pause');
+    return utf8Bytes(L.join('\r\n') + '\r\n');
+  }
+
+  function uninstallerBat(fonts) {
+    var L = [
+      '@echo off',
+      'setlocal',
+      'set "FD=%LOCALAPPDATA%\\Microsoft\\Windows\\Fonts"',
+      'set "RK=HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts"',
+      'echo Uninstalling Wuthering Waves fonts for the current user...'
+    ];
+    fonts.forEach(function (f) {
+      L.push('del /q "%FD%\\' + f.install + '.ttf" >nul 2>&1');
+      L.push('reg delete "%RK%" /v "WuWa ' + f.ascii + ' (TrueType)" /f >nul 2>&1');
+    });
+    L.push('echo Done. Reopen other apps to refresh the font list.');
+    L.push('echo.');
+    L.push('pause');
+    return utf8Bytes(L.join('\r\n') + '\r\n');
+  }
+
+  function ensureFamilies(families) {
+    return Promise.all(families.map(function (fam) {
+      return document.fonts.load(GLYPH_SIZE + 'px "' + fam + '"').catch(function () {});
+    }));
+  }
+  function runExport(layout, families, format, baseName) {
+    var tr = format === 'png-transparent' || !layout.bg;
+    if (format === 'svg') {
+      downloadDataUrl('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(buildSVG(layout, families, tr)), baseName + (tr ? '_透明.svg' : '.svg'));
+    } else {
+      downloadDataUrl(drawCanvas(layout, tr), baseName + (tr ? '_透明.png' : '.png'));
+    }
+  }
+  $('btnExport').addEventListener('click', function () {
+    var text = plain();
+    if (!text.trim()) { toast('请先输入文字', true); ta.focus(); return; }
+    var scope = $('wwExportScope').value, format = $('wwExportFormat').value, blocks, name;
+    if (scope === 'mixed') {
+      blocks = runs().map(function (r) { return { key: r.key, name: FONT_CONFIG[r.key].name, text: r.text }; });
+      name = '鸣潮字体_当前排版';
+    } else if (scope === 'active') {
+      blocks = [{ key: activeFont, name: FONT_CONFIG[activeFont].name, text: filterText(activeFont, text) }];
+      name = '鸣潮字体_' + FONT_CONFIG[activeFont].name;
+    } else {
+      blocks = ORDER.map(function (k) { return { key: k, name: FONT_CONFIG[k].name, text: filterText(k, text) }; });
+      name = '鸣潮字体_全部对比';
+    }
+    var families = blocks.map(function (b) { return familyOf(b.key); });
+    ensureFamilies(families).then(function () {
+      runExport(textLayout(blocks), families, format, name);
+      toast('已导出');
+    });
+  });
+  $('btnSaveTable').addEventListener('click', function () {
+    var key = tableFont.value, format = $('wwTableFormat').value;
+    if (key === ALL_FONTS) { $('btnSaveAllTables').click(); return; }
+    var families = [familyOf(key)];
+    ensureFamilies(families).then(function () {
+      runExport(tableLayout(key), families, format, '鸣潮对照表_' + FONT_CONFIG[key].name);
+      toast('已保存对照表');
+    });
+  });
+  $('btnSaveAllTables').addEventListener('click', function () {
+    var families = ORDER.map(familyOf), format = $('wwTableFormat').value;
+    toast('正在合成全部对照表…');
+    ensureFamilies(families).then(function () {
+      runExport(allTablesLayout(), families, format, '鸣潮对照表_全部');
+      toast('已保存全部对照表');
+    });
+  });
+
+  $('btnInstallFonts').addEventListener('click', function () {
+    var fonts = [], missing = [];
+    ORDER.forEach(function (k) {
+      var uri = fontSrc(familyOf(k));
+      var m = uri && /^data:font\/ttf;base64,(.+)$/.exec(uri);
+      if (!m) { missing.push(FONT_CONFIG[k].name); return; }
+      fonts.push({ name: FONT_FILE_NAMES[k], install: 'WuWa' + k.slice(5), ascii: k.slice(5), b64: m[1] });
+    });
+    if (missing.length) {
+      toast('未找到内嵌字体：' + missing.join('、') + '，请使用构建后的页面', true);
+      return;
+    }
+    var entries = fonts.map(function (f) { return { name: f.name, data: b64Bytes(f.b64) }; });
+    entries.push({ name: '一键安装.bat', data: installerBat(fonts) });
+    entries.push({ name: '一键卸载.bat', data: uninstallerBat(fonts) });
+    entries.push({ name: '说明.txt', data: utf8Bytes('\uFEFF' + FONT_README) });
+    var url = URL.createObjectURL(makeZip(entries));
+    var a = document.createElement('a'); a.href = url; a.download = '鸣潮字体包.zip';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    toast('字体包已下载 · 双击「一键安装.bat」即可装好全部字体');
+  });
+
+  // ---- 控件 ----
+  $('btnCopyInput').addEventListener('click', function () { copyText(plain()); });
+  $('btnClear').addEventListener('click', function () { if (clearSnapshot) undoClear(); else clearAll(); });
+  $('btnSample').addEventListener('click', function () {
+    chars = Array.from(DEFAULT_TEXT).map(function (ch) { return { ch: ch, key: activeFont }; });
+    ta.value = plain(); render(); save(); ta.focus();
+    toast('已填入示例 · ' + FONT_CONFIG[activeFont].name);
+  });
+  $('btnApplyAll').addEventListener('click', function () {
+    applyToAll = !applyToAll;
+    this.setAttribute('aria-pressed', String(applyToAll));
+    $('wwApplyState').textContent = applyToAll ? '开' : '关';
+    if (applyToAll) chars.forEach(function (c) { c.key = activeFont; });
+    syncActive(); render(); save();
+    toast(applyToAll ? '切换字体将作用于全部文字' : '切换字体仅作用于后续输入');
+  });
+  $('wwSize').addEventListener('input', function () { previewSize = +this.value; $('wwSizeOut').textContent = this.value; render(); save(); });
+  $('wwTrack').addEventListener('input', function () { tracking = +this.value; $('wwTrackOut').textContent = this.value; render(); save(); });
+  $('wwLead').addEventListener('input', function () { lineGap = +this.value; $('wwLeadOut').textContent = this.value; renderTape(); save(); });
+  $('wwInk').addEventListener('change', function () {
+    if (this.value === 'custom') inkColor = glyphInk();   // 从当前显示色接手，切过去不会看不见
+    ink = this.value; syncTypeControls(); render(); save();
+  });
+  $('wwInkColor').addEventListener('input', function () { inkColor = this.value; render(); save(); });
+  $('wwPaper').addEventListener('change', function () { paper = this.value; render(); save(); });
+  $('wwAlign').addEventListener('change', function () { align = this.value; renderTape(); save(); });
+  $('btnResetType').addEventListener('click', function () {
+    previewSize = TYPE_DEFAULTS.size; tracking = TYPE_DEFAULTS.track; lineGap = TYPE_DEFAULTS.lead;
+    ink = TYPE_DEFAULTS.ink; inkColor = TYPE_DEFAULTS.inkColor; paper = TYPE_DEFAULTS.paper; align = TYPE_DEFAULTS.align;
+    syncTypeControls(); render(); save(); toast('排版已重置');
+  });
+  function syncTypeControls() {
+    $('wwSize').value = previewSize; $('wwSizeOut').textContent = previewSize;
+    $('wwTrack').value = tracking; $('wwTrackOut').textContent = tracking;
+    $('wwLead').value = lineGap; $('wwLeadOut').textContent = lineGap;
+    $('wwInk').value = ink; $('wwInkColor').value = inkColor;
+    $('wwPaper').value = paper; $('wwAlign').value = align;
+  }
+
+  // ---- 初始化 ----
+  load();
+  if (!hadSave && !chars.length) chars = Array.from(DEFAULT_TEXT).map(function (ch) { return { ch: ch, key: activeFont }; });
+  if (restoredTable) tableFont.value = restoredTable;
+  ta.value = plain();
+  syncTypeControls();
+  $('btnApplyAll').setAttribute('aria-pressed', String(applyToAll));
+  $('wwApplyState').textContent = applyToAll ? '开' : '关';
+  renderKeyboard(); renderTable(); syncActive(); render();
+})();
+</script>
+</body>
+</html>
