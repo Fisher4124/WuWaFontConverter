@@ -4,8 +4,8 @@
 
 - 程序形式：HTML文件，无需联网；
 - 使用方法：使用任一电脑浏览器打开；
-- 下载地址：[Release](https://github.com/Fisher4124/WuWaFontConverter/releases/)或[百度网盘](https://pan.baidu.com/s/1G9LpZpISxWq9NJmYvm_aRg)；
-- 在线项目：[《鸣潮百科》字体系统](https://wuwa.huijiwiki.com/p/830)。
+- 下载地址：[Release](https://github.com/Fisher4124/WuWaFontConverter/releases/)或[百度网盘](https://pan.baidu.com/s/1ebAcAaJy2TqK6juc4EPoBw)；
+- 在线项目：《[鸣潮百科](https://wuwa.huijiwiki.com/)》[简易文字系统](https://wuwa.huijiwiki.com/p/830)与[进阶系统](https://wuwa.huijiwiki.com/p/13817)。
 
 ## 基本功能
 
